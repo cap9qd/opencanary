@@ -244,3 +244,39 @@ class SlackHandler(logging.Handler):
             )
         if response.status_code != 200:
             print("Error %s sending Slack message, the response was:\n%s" % (response.status_code, response.text))
+
+class PushoverHandler(logging.Handler):
+    def __init__(self,webhook,user,token,title,html,sound):
+        logging.Handler.__init__(self)
+        self.webhook=str(webhook)
+        self.user=str(user)
+        self.token=str(token)
+        self.title=str(title)
+        self.html=str(html)
+        self.sound=str(sound)
+
+    def generate_msg(self, alert):
+        msg = {}
+        msg['token'] = self.token
+        msg['user'] = self.user
+        msg['title'] = self.title
+        msg['html'] = self.html
+        msg['sound'] = self.sound
+        
+        data=json.loads(alert.msg)
+        
+        msg['message']=""
+        for k,v in data.items():
+            if type(v) is dict:
+                for key, val in v.items():
+                    msg['message'] += "{0}: {1}\n".format(key, val)
+            else:
+                msg['message'] += "{0}: {1}\n".format(k, v)
+        return(msg)
+
+    def emit(self, record):
+        data = self.generate_msg(record)
+        response = requests.post(self.webhook, data=data)
+        if response.status_code != 200:
+            print("Error %s sending PushOver message, the response was:\n%s" % (response.status_code, response.text))
+
